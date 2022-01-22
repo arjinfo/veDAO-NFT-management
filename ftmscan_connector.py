@@ -66,6 +66,42 @@ class FTMScanConnector:
             ])
         balance: str = self.run_query(query=query_url)
         return float(balance)
+    
+    def tx_receipt_list(self, 
+                        address: str, 
+                        startblock: int = 0, 
+                        endblock: int = 99999999) -> List['TxReceipt']:
+        query_url: str = "".join([
+            self.api_endpoint_preamble, "module=account", "&action=txlist"
+            f"&address={address}", f"&startblock={startblock}", 
+            f"&endblock={endblock}", "&sort=asc", f"&apikey={self.API_KEY}"
+        ])
+        tx_receipts = self.run_query(query=query_url)
+        return tx_receipts
+
+class TxReceipt(TypedDict):
+    """An Ethereum (Fantom) transaction receipt from the Etherscan (FTMScan) API.
+
+    Keys (value_type): 
+        effectiveGasPrice (int): Gas price at the time of the transaction. 
+            A base 16 encoded integer units of Wei.
+        gasUsed (int): Gas usage by the transaction. A base 16 encoded integer
+            in units of Wei. Thus, `int(gasUsed, base=16)` is an integer.  
+        cumulativeGasUsed: int
+        from: Address the transaction was sent from.
+        to: 
+        blockHash: Any
+        blockNumber: Any
+        contractAddress: Any
+        logs: dict
+        logsBloom: Any
+        status: Any
+        transactionHash: Any 
+        transactionIndex: Any
+        type: Any
+    """
+
+
 
 
 def test_connector():
@@ -75,7 +111,23 @@ def test_connector():
     assert isinstance(balance, float)
     assert balance >= 0 
 
+def test_tx_list():
+    ftmscan = FTMScanConnector()
+    address = "0xba821dc848803900C01BA7Ac1D7a034B95B1eD97"
+    tx_receipts: List[TxReceipt] = ftmscan.tx_list(address=address)
+    assert isinstance(tx_receipts, (list))
+
+    if not len(tx_receipts) > 0:
+        return
+
+    tx_receipt = tx_receipts[0]
+    assert isinstance(tx_receipt, dict)
+    assert "effectiveGasPrice" in tx_receipt.keys()
+
+
+
 
 if __name__ == "__main__":
     test_connector()
+    test_tx_list()
     print("All tests passed.")
